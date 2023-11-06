@@ -26,8 +26,10 @@ class Shop extends CI_Controller
 
                 $product['product'] = $data;
                 $product['related_products'] = $this->product->related_products($data->id, $data->category_id);
+                $params['h'] = $data->name . ' | ' . get_settings('store_tagline');
+                $params['productktg'] = $this->productktg->get_all();
 
-                get_header($data->name . ' | ' . get_settings('store_tagline'));
+                get_header($params);
                 get_template_part('shop/view_single_product', $product);
                 get_footer();
             } else {
