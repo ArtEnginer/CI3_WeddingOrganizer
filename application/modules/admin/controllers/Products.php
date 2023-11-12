@@ -1,7 +1,8 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class Products extends CI_Controller {
+class Products extends CI_Controller
+{
     public function __construct()
     {
         parent::__construct();
@@ -17,7 +18,7 @@ class Products extends CI_Controller {
 
     public function index()
     {
-        $params['title'] = 'Kelola Produk '. get_store_name();
+        $params['title'] = 'Kelola Produk ' . get_store_name();
 
         $config['base_url'] = site_url('admin/products/index');
         $config['total_rows'] = $this->product->count_all_products();
@@ -25,7 +26,7 @@ class Products extends CI_Controller {
         $config['uri_segment'] = 4;
         $choice = $config['total_rows'] / $config['per_page'];
         $config['num_links'] = floor($choice);
- 
+
         $config['first_link']       = '«';
         $config['last_link']        = '»';
         $config['next_link']        = '›';
@@ -47,7 +48,7 @@ class Products extends CI_Controller {
 
         $this->load->library('pagination', $config);
         $page = ($this->uri->segment(4)) ? $this->uri->segment(4) : 0;
- 
+
         $products['products'] = $this->product->get_all_products($config['per_page'], $page);
         $products['pagination'] = $this->pagination->create_links();
 
@@ -61,7 +62,7 @@ class Products extends CI_Controller {
         $query = $this->input->get('search_query');
         $query = html_escape($query);
 
-        $params['title'] = 'Cari "'. $query .'"';
+        $params['title'] = 'Cari "' . $query . '"';
         $params['query'] = $query;
 
         $config['base_url'] = site_url('admin/products/search');
@@ -70,7 +71,7 @@ class Products extends CI_Controller {
         $config['uri_segment'] = 4;
         $choice = $config['total_rows'] / $config['per_page'];
         $config['num_links'] = floor($choice);
- 
+
         $config['first_link']       = '«';
         $config['last_link']        = '»';
         $config['next_link']        = '›';
@@ -93,7 +94,7 @@ class Products extends CI_Controller {
 
         $this->load->library('pagination', $config);
         $page = ($this->uri->segment(4)) ? $this->uri->segment(4) : 0;
- 
+
         $products['products'] = $this->product->search_products($query, $config['per_page'], $page);
         $products['pagination'] = $this->pagination->create_links();
         $products['count'] = $this->product->count_search($query);
@@ -117,6 +118,7 @@ class Products extends CI_Controller {
 
     public function add_product()
     {
+
         $this->form_validation->set_error_delimiters('<div class="form-error text-danger font-weight-bold">', '</div>');
 
         $this->form_validation->set_rules('name', 'Nama produk', 'trim|required|min_length[4]|max_length[255]');
@@ -124,13 +126,10 @@ class Products extends CI_Controller {
         $this->form_validation->set_rules('stock', 'Stok barang', 'required|numeric');
         $this->form_validation->set_rules('unit', 'Satuan barang', 'required');
         $this->form_validation->set_rules('description', 'Deskripsi produk', 'max_length[512]');
-        
-        if ($this->form_validation->run() == FALSE)
-        {
+
+        if ($this->form_validation->run() == FALSE) {
             $this->add_new_product();
-        }
-        else
-        {
+        } else {
             $name = $this->input->post('name');
             $category_id = $this->input->post('category_id');
             $price = $this->input->post('price');
@@ -140,23 +139,35 @@ class Products extends CI_Controller {
             $date = date('Y-m-d H:i:s');
 
             $config['upload_path'] = './assets/uploads/products/';
-            $config['allowed_types'] = 'jpg|png|jpeg';
+            $config['allowed_types'] = 'jpg|png|jpeg|mp4|avi|mov';
             $config['max_size'] = 2048;
 
             $this->load->library('upload', $config);
 
-            if ( isset($_FILES['picture']) && @$_FILES['picture']['error'] == '0')
-            {
-                if ( ! $this->upload->do_upload('picture'))
-                {
+            // Upload main picture
+            if (isset($_FILES['picture']) && @$_FILES['picture']['error'] == '0') {
+                if (!$this->upload->do_upload('picture')) {
                     $error = array('error' => $this->upload->display_errors());
-
                     show_error($error);
-                }
-                else
-                {
+                } else {
                     $upload_data = $this->upload->data();
                     $file_name = $upload_data['file_name'];
+                }
+            }
+
+            // Upload slides
+            $slide_files = array();
+            for ($i = 1; $i <= 3; $i++) {
+                $slide_name = "slide_" . $i;
+
+                if (isset($_FILES[$slide_name]) && @$_FILES[$slide_name]['error'] == '0') {
+                    if (!$this->upload->do_upload($slide_name)) {
+                        $error = array('error' => $this->upload->display_errors());
+                        show_error($error);
+                    } else {
+                        $upload_data = $this->upload->data();
+                        $slide_files[$slide_name] = $upload_data['file_name'];
+                    }
                 }
             }
 
@@ -173,9 +184,13 @@ class Products extends CI_Controller {
             $product['stock'] = $stock;
             $product['product_unit'] = $unit;
             $product['picture_name'] = $file_name;
+            $product['slide_1'] = isset($slide_files['slide_1']) ? $slide_files['slide_1'] : null;
+            $product['slide_2'] = isset($slide_files['slide_2']) ? $slide_files['slide_2'] : null;
+            $product['slide_3'] = isset($slide_files['slide_3']) ? $slide_files['slide_3'] : null;
             $product['add_date'] = $date;
 
             $this->product->add_new_product($product);
+
             $this->session->set_flashdata('add_new_product_flash', 'Produk baru berhasil ditambahkan!');
 
             redirect('admin/products/add_new_product');
@@ -184,11 +199,10 @@ class Products extends CI_Controller {
 
     public function edit($id = 0)
     {
-        if ( $this->product->is_product_exist($id))
-        {
+        if ($this->product->is_product_exist($id)) {
             $data = $this->product->product_data($id);
 
-            $params['title'] = 'Edit '. $data->name;
+            $params['title'] = 'Edit ' . $data->name;
 
             $product['flash'] = $this->session->flashdata('edit_product_flash');
             $product['product'] = $data;
@@ -197,9 +211,7 @@ class Products extends CI_Controller {
             $this->load->view('header', $params);
             $this->load->view('products/edit_product', $product);
             $this->load->view('footer');
-        }
-        else
-        {
+        } else {
             show_404();
         }
     }
@@ -213,14 +225,11 @@ class Products extends CI_Controller {
         $this->form_validation->set_rules('stock', 'Stok barang', 'required|numeric');
         $this->form_validation->set_rules('unit', 'Satuan barang', 'required');
         $this->form_validation->set_rules('description', 'Deskripsi produk', 'max_length[512]');
-        
-        if ($this->form_validation->run() == FALSE)
-        {
+
+        if ($this->form_validation->run() == FALSE) {
             $id = $this->input->post('id');
             $this->edit($id);
-        }
-        else
-        {
+        } else {
             $id = $this->input->post('id');
             $data = $this->product->product_data($id);
             $current_picture = $data->picture_name;
@@ -235,41 +244,78 @@ class Products extends CI_Controller {
             $available = $this->input->post('is_available');
             $date = date('Y-m-d H:i:s');
 
+            // Konfigurasi untuk gambar utama
             $config['upload_path'] = './assets/uploads/products/';
             $config['allowed_types'] = 'jpg|png|jpeg';
             $config['max_size'] = 2048;
 
             $this->load->library('upload', $config);
 
-            if ( isset($_FILES['picture']) && @$_FILES['picture']['error'] == '0')
-            {
-                if ( $this->upload->do_upload('picture'))
-                {
+            // Menghandle gambar utama
+            if (isset($_FILES['picture']) && @$_FILES['picture']['error'] == '0') {
+                if ($this->upload->do_upload('picture')) {
                     $upload_data = $this->upload->data();
-                    $new_file_name = $upload_data['file_name'];
+                    $file_name = $upload_data['file_name'];
 
-                    if ( $this->product->is_product_have_image($id))
-                    {
-                        $file = './assets/uploads/products/'. $current_picture;
-
-                        $file_name = $new_file_name;
+                    // Hapus gambar lama jika ada
+                    if ($this->product->is_product_have_image($id)) {
+                        $file = './assets/uploads/products/' . $current_picture;
                         unlink($file);
                     }
-                    else
-                    {
-                        $file_name = $new_file_name;
-                    }
-                }
-                else
-                {
+                } else {
                     show_error($this->upload->display_errors());
                 }
-            }
-            else
-            {
+            } else {
                 $file_name = ($this->product->is_product_have_image($id)) ? $current_picture : NULL;
             }
 
+            // Konfigurasi untuk slide 1
+            $config['upload_path'] = './assets/uploads/products/';
+
+            $config['allowed_types'] = 'jpg|png|jpeg';
+            $config['max_size'] = 2048;
+
+            $this->upload->initialize($config);
+
+            // Menghandle slide 1
+            if (isset($_FILES['slide_1']) && @$_FILES['slide_1']['error'] == '0') {
+                if ($this->upload->do_upload('slide_1')) {
+                    $upload_data = $this->upload->data();
+                    $slide_1_name = $upload_data['file_name'];
+                } else {
+                    show_error($this->upload->display_errors());
+                }
+            } else {
+                $slide_1_name = NULL;
+            }
+
+
+            // Menghandle slide 2
+            if (isset($_FILES['slide_2']) && @$_FILES['slide_2']['error'] == '0') {
+                if ($this->upload->do_upload('slide_2')) {
+                    $upload_data = $this->upload->data();
+                    $slide_2_name = $upload_data['file_name'];
+                } else {
+                    show_error($this->upload->display_errors());
+                }
+            } else {
+                $slide_2_name = NULL;
+            }
+
+
+            // Menghandle slide 3
+            if (isset($_FILES['slide_3']) && @$_FILES['slide_3']['error'] == '0') {
+                if ($this->upload->do_upload('slide_3')) {
+                    $upload_data = $this->upload->data();
+                    $slide_3_name = $upload_data['file_name'];
+                } else {
+                    show_error($this->upload->display_errors());
+                }
+            } else {
+                $slide_3_name = NULL;
+            }
+
+            // Menyiapkan data untuk disimpan
             $product['category_id'] = $category_id;
             $product['name'] = $name;
             $product['description'] = $desc;
@@ -278,12 +324,17 @@ class Products extends CI_Controller {
             $product['stock'] = $stock;
             $product['product_unit'] = $unit;
             $product['picture_name'] = $file_name;
+            $product['slide_1'] = $slide_1_name;
+            $product['slide_2'] = $slide_2_name; // Sesuaikan dengan nama variabel yang digunakan untuk slide 2
+            $product['slide_3'] = $slide_3_name; // Sesuaikan dengan nama variabel yang digunakan untuk slide 3
             $product['is_available'] = $available;
 
+            // Melakukan penyimpanan data
             $this->product->edit_product($id, $product);
+
             $this->session->set_flashdata('edit_product_flash', 'Produk berhasil diperbarui!');
 
-            redirect('admin/products/view/'. $id);
+            redirect('admin/products/view/' . $id);
         }
     }
 
@@ -291,39 +342,34 @@ class Products extends CI_Controller {
     {
         $action = $this->input->get('action');
 
-        switch ($action)
-        {
-            case 'delete_image' :
+        switch ($action) {
+            case 'delete_image':
                 $id = $this->input->post('id');
                 $data = $this->product->product_data($id);
                 $picture_name = $data->picture_name;
-                $file = './assets/uploads/products/'. $picture_name;
+                $file = './assets/uploads/products/' . $picture_name;
 
-                if ( file_exists($file) && is_readable($file) && unlink($file))
-                {
+                if (file_exists($file) && is_readable($file) && unlink($file)) {
                     $this->product->delete_product_image($id);
                     $response = array('code' => 204, 'message' => 'Gambar berhasil dihapus');
-                }
-                else
-                {
+                } else {
                     $response = array('code' => 200, 'message' => 'Terjadi kesalahan sata menghapus gambar');
                 }
-            break;
-            case 'delete_product' :
+                break;
+            case 'delete_product':
                 $id = $this->input->post('id');
                 $data = $this->product->product_data($id);
                 $picture = $data->picture_name;
-                $file = './assets/uploads/products/'. $picture;
+                $file = './assets/uploads/products/' . $picture;
 
                 $this->product->delete_product($id);
 
-                if ( file_exists($file) && is_readable($file))
-                {
+                if (file_exists($file) && is_readable($file)) {
                     unlink($file);
                 }
 
                 $response = array('code' => 204);
-            break;
+                break;
         }
 
         $response = json_encode($response);
@@ -333,11 +379,10 @@ class Products extends CI_Controller {
 
     public function view($id = 0)
     {
-        if ( $this->product->is_product_exist($id))
-        {
+        if ($this->product->is_product_exist($id)) {
             $data = $this->product->product_data($id);
 
-            $params['title'] = $data->name .' | SKU '. $data->sku;
+            $params['title'] = $data->name . ' | SKU ' . $data->sku;
 
             $product['product'] = $data;
             $product['flash'] = $this->session->flashdata('product_flash');
@@ -346,9 +391,7 @@ class Products extends CI_Controller {
             $this->load->view('header', $params);
             $this->load->view('products/view', $product);
             $this->load->view('footer');
-        }
-        else
-        {
+        } else {
             show_404();
         }
     }
@@ -369,36 +412,36 @@ class Products extends CI_Controller {
         $action = $this->input->get('action');
 
         switch ($action) {
-            case 'list' :
+            case 'list':
                 $categories['data'] = $this->product->get_all_categories();
                 $response = $categories;
-            break;
-            case 'view_data' :
+                break;
+            case 'view_data':
                 $id = $this->input->get('id');
 
                 $data['data'] = $this->product->category_data($id);
                 $response = $data;
-            break;
-            case 'add_category' :
+                break;
+            case 'add_category':
                 $name = $this->input->post('name');
 
                 $this->product->add_category($name);
                 $categories['data'] = $this->product->get_all_categories();
                 $response = $categories;
-            break;
-            case 'delete_category' :
+                break;
+            case 'delete_category':
                 $id = $this->input->post('id');
 
                 $this->product->delete_category($id);
                 $response = array('code' => 204, 'message' => 'Kategori berhasil dihapus!');
-            break;
-            case 'edit_category' :
+                break;
+            case 'edit_category':
                 $id = $this->input->post('id');
                 $name = $this->input->post('name');
 
                 $this->product->edit_category($id, $name);
                 $response = array('code' => 201, 'message' => 'Kategori berhasil diperbarui');
-            break;
+                break;
         }
 
         $response = json_encode($response);
@@ -420,9 +463,8 @@ class Products extends CI_Controller {
         $coupons = $this->product->get_all_coupons();
         $n = 0;
 
-        foreach ($coupons as $coupon)
-        {
-            $coupons[$n]->credit = 'Rp '. format_rupiah($coupon->credit);
+        foreach ($coupons as $coupon) {
+            $coupons[$n]->credit = 'Rp ' . format_rupiah($coupon->credit);
             $coupons[$n]->start_date = get_formatted_date($coupon->start_date);
             $coupons[$n]->is_active = ($coupon->is_active == 1) ? ((strtotime($coupon->expired_date) < time()) ? 'Sudah kadaluarsa' : 'Masih berlaku') : 'Tidak aktif';
             $coupons[$n]->expired_date = get_formatted_date($coupon->expired_date);
@@ -438,18 +480,18 @@ class Products extends CI_Controller {
         $action = $this->input->get('action');
 
         switch ($action) {
-            case 'coupon_list' :
+            case 'coupon_list':
                 $coupons['data'] = $this->_get_coupon_list();
 
                 $response = $coupons;
-            break;
-            case 'view_data' :
+                break;
+            case 'view_data':
                 $id = $this->input->get('id');
 
                 $data['data'] = $this->product->coupon_data($id);
                 $response = $data;
-            break;
-            case 'add_coupon' :
+                break;
+            case 'add_coupon':
                 $name = $this->input->post('name');
                 $code = $this->input->post('code');
                 $credit = $this->input->post('credit');
@@ -466,16 +508,16 @@ class Products extends CI_Controller {
 
                 $this->product->add_coupon($coupon);
                 $coupons['data'] = $this->_get_coupon_list();
-            
+
                 $response = $coupons;
-            break;
-            case 'delete_coupon' :
+                break;
+            case 'delete_coupon':
                 $id = $this->input->post('id');
 
                 $this->product->delete_coupon($id);
                 $response = array('code' => 204, 'message' => 'Kupon berhasil dihapus!');
-            break;
-            case 'edit_coupon' :
+                break;
+            case 'edit_coupon':
                 $id = $this->input->post('id');
                 $name = $this->input->post('name');
                 $code = $this->input->post('code');
@@ -495,7 +537,7 @@ class Products extends CI_Controller {
 
                 $this->product->edit_coupon($id, $coupon);
                 $response = array('code' => 201, 'message' => 'Kupon berhasil diperbarui');
-            break;
+                break;
         }
 
         $response = json_encode($response);
