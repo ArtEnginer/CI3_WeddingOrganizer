@@ -45,8 +45,10 @@ class Shop extends CI_Controller
 
         $ongkir = ($cart['total_cart'] >= get_settings('min_shop_to_free_shipping_cost')) ? 0 : get_settings('shipping_cost');
         $cart['total_price'] = $cart['total_cart'] + $ongkir;
+        $params['productktg'] = $this->productktg->get_all();
+        $params['title'] = 'Keranjang Belanja';
 
-        get_header('Keranjang Belanja');
+        get_header($params);
         get_template_part('shop/cart', $cart);
         get_footer();
     }
@@ -123,11 +125,14 @@ class Shop extends CI_Controller
                 $params['ongkir'] = ($ongkir > 0) ? 'Rp' . format_rupiah($ongkir) : 'Gratis';
                 $params['total'] = $subtotal + $ongkir - $discount;
                 $params['discount'] = $disc;
+                $params['productktg'] = $this->productktg->get_all();
+                $params['title'] = 'Checkout';
+
 
                 $this->session->set_userdata('order_quantity', $items);
                 $this->session->set_userdata('total_price', $params['total']);
 
-                get_header('Checkout');
+                get_header($params);
                 get_template_part('shop/checkout', $params);
                 get_footer();
                 break;
@@ -139,6 +144,7 @@ class Shop extends CI_Controller
                 $order_number = $this->_create_order_number($quantity, $user_id, $coupon_id);
                 $order_date = date('Y-m-d H:i:s');
                 $total_price = $this->session->userdata('total_price');
+
                 $total_items = count($quantity);
                 $payment = $this->input->post('payment');
 
@@ -169,6 +175,7 @@ class Shop extends CI_Controller
                     'payment_method' => $payment,
                     'delivery_data' => $delivery_data
                 );
+                var_dump($order);
 
                 $order = $this->product->create_order($order);
 

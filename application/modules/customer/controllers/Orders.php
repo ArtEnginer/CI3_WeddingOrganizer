@@ -1,7 +1,8 @@
 <?php
-defined('BASEPATH') OR exit('No direct script access allowed');
+defined('BASEPATH') or exit('No direct script access allowed');
 
-class Orders extends CI_Controller {
+class Orders extends CI_Controller
+{
     public function __construct()
     {
         parent::__construct();
@@ -23,7 +24,7 @@ class Orders extends CI_Controller {
         $config['uri_segment'] = 4;
         $choice = $config['total_rows'] / $config['per_page'];
         $config['num_links'] = floor($choice);
- 
+
         $config['first_link']       = '«';
         $config['last_link']        = '»';
         $config['next_link']        = '›';
@@ -45,7 +46,7 @@ class Orders extends CI_Controller {
 
         $this->load->library('pagination', $config);
         $page = ($this->uri->segment(4)) ? $this->uri->segment(4) : 0;
- 
+
         $orders['orders'] = $this->order->get_all_orders($config['per_page'], $page);
         $orders['pagination'] = $this->pagination->create_links();
 
@@ -56,14 +57,14 @@ class Orders extends CI_Controller {
 
     public function view($id = 0)
     {
-        if ( $this->order->is_order_exist($id))
-        {
+        if ($this->order->is_order_exist($id)) {
             $data = $this->order->order_data($id);
+
             $items = $this->order->order_items($id);
             $banks = json_decode(get_settings('payment_banks'));
-            $banks = (Array) $banks;
- 
-            $params['title'] = 'Order #'. $data->order_number;
+            $banks = (array) $banks;
+
+            $params['title'] = 'Order #' . $data->order_number;
 
             $order['data'] = $data;
             $order['items'] = $items;
@@ -73,9 +74,7 @@ class Orders extends CI_Controller {
             $this->load->view('header', $params);
             $this->load->view('orders/view', $order);
             $this->load->view('footer');
-        }
-        else
-        {
+        } else {
             show_404();
         }
     }
@@ -84,36 +83,29 @@ class Orders extends CI_Controller {
     {
         $action = $this->input->get('action');
 
-        switch ($action)
-        {
-            case 'cancel_order' :
+        switch ($action) {
+            case 'cancel_order':
                 $id = $this->input->post('id');
                 $data = $this->order->order_data($id);
 
-                if ( ($data->payment_method == 1 && $data->order_status == 1) || ($data->payment_method == 2 && $data->order_status == 1))
-                {
+                if (($data->payment_method == 1 && $data->order_status == 1) || ($data->payment_method == 2 && $data->order_status == 1)) {
                     $this->order->cancel_order($id);
                     $response = array('code' => 200, 'success' => TRUE, 'message' => 'Order dibatalkan');
-                }
-                else
-                {
+                } else {
                     $response = array('code' => 200, 'error' => TRUE, 'message' => 'Order tidak dapat dibatalkan');
                 }
-            break;
-            case 'delete_order' :
+                break;
+            case 'delete_order':
                 $id = $this->input->post('id');
                 $data = $this->order->order_data($id);
 
-                if ( ($data->payment_method == 1 && ($data->order_status == 5 || $data->order_status == 4)) || ($data->payment_method == 2 && ($data->order_status == 4 || $sata->order_status == 3)))
-                {
+                if (($data->payment_method == 1 && ($data->order_status == 5 || $data->order_status == 4)) || ($data->payment_method == 2 && ($data->order_status == 4 || $sata->order_status == 3))) {
                     $this->order->delete_order($id);
                     $response = array('code' => 200, 'success' => TRUE, 'message' => 'Order dihapus');
-                }
-                else
-                {
+                } else {
                     $response = array('code' => 200, 'error' => TRUE, 'message' => 'Order tidak dapat dihapus');
                 }
-            break;
+                break;
         }
 
         $response = json_encode($response);
