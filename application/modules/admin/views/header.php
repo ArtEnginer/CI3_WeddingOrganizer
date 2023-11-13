@@ -71,6 +71,12 @@ $query = $this->input->get('search_query');
               </a>
             </li>
             <li class="nav-item">
+              <a class="nav-link" href="<?php echo site_url('admin/dokumentasi'); ?>">
+                <i class="fa fa-camera text-success"></i>
+                <span class="nav-link-text">Dokumentasi</span>
+              </a>
+            </li>
+            <li class="nav-item">
               <a class="nav-link" href="<?php echo site_url('admin/orders'); ?>">
                 <i class="fa fa-file-invoice text-danger"></i>
                 <span class="nav-link-text">Pesanan</span>
@@ -119,8 +125,7 @@ $query = $this->input->get('search_query');
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <!-- Search form -->
           <?php if (get_controller() == 'orders') : ?>
-            <form class="navbar-search navbar-search-light form-inline mr-sm-3" id="navbar-search-main"
-              action="<?php echo site_url('admin/orders'); ?>" required>
+            <form class="navbar-search navbar-search-light form-inline mr-sm-3" id="navbar-search-main" action="<?php echo site_url('admin/orders'); ?>" required>
             <?php else : ?>
               <form class="navbar-search navbar-search-light form-inline mr-sm-3" id="navbar-search-main" action="<?php echo site_url('admin/products/search'); ?>" required>
               <?php endif; ?>

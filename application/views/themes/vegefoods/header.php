@@ -86,6 +86,7 @@ defined('BASEPATH') or exit('No direct script access allowed');
 							<?php foreach ($productktg as $pk) : ?>
 								<a class="dropdown-item" href="<?php echo site_url('shop/category/' . $pk->id); ?>"><?php echo $pk->name; ?></a>
 							<?php endforeach; ?>
+							<a href="<?php echo site_url('dokumentasi/'); ?>" class="dropdown-item">Dokumentasi</a>
 						</div>
 					</li>
 
